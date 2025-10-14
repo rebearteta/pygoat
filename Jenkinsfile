@@ -6,25 +6,13 @@ pipeline {
                 docker { image 'python:3.11' } 
             }
             steps {
-                sh '''
-                    pip install safety
-        
-                      # Informe legible en consola (no detiene el job por sí solo)
-                      safety check --file=requirements.txt --full-report || true
-            
-                      # Genera JSON y captura exit code para decidir el resultado
-                      set +e
-                      safety check --file=requirements.txt --output json > safety-report.json
-                      STATUS=$?
-                      set -e
-            
-                      # Falla el build si hubo vulnerabilidades
-                      if [ "$STATUS" -ne 0 ]; then
-                        echo "Safety encontró vulnerabilidades. Revisa safety-report.json"
-                        exit 1
-                      fi
-                '''
-              }
+                withCredentials([string(credentialsId: 'SAFETY_API_KEY', variable: 'API_KEY')]) {
+                    sh '''
+                        pip install safety
+                        safety --key $API_KEY --stage cicd scan
+                    '''
+                }
+            }
         }
         stage('Compilation') {
             agent {
