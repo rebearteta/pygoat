@@ -3,7 +3,10 @@ pipeline {
     stages {
         stage('Safety') {
             agent {
-                docker { image 'python:3.11' } 
+                docker { 
+                    image 'python:3.11'
+                    args '-u root'
+                } 
             }
             steps {
                 withCredentials([string(credentialsId: 'SAFETY_API_KEY', variable: 'API_KEY')]) {
