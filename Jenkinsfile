@@ -1,6 +1,54 @@
 pipeline {
-    agent any
+    agent none
+     parameters {
+        booleanParam(name: 'BLOCK_ON_FINDINGS', defaultValue: true, description: 'Bloquear el pipeline si hay HIGH/CRITICAL')
+        choice(name: 'SCAN_TARGET', choices: ['image','filesystem','both'], description: 'Qué escanear con Trivy')
+        string(name: 'IMAGE_NAME', defaultValue: 'myjenkins-blueocean', description: 'Nombre de la imagen a escanear')
+        string(name: 'IMAGE_TAG',  defaultValue: '2.516.3-1', description: 'Tag de la imagen a escanear')
+        string(name: 'SEVERITIES',  defaultValue: 'CRITICAL,HIGH', description: 'Severidades a considerar')
+        booleanParam(name: 'IGNORE_UNFIXED', defaultValue: true, description: 'Ignorar vulnerabilidades sin fix disponible')
+    }
+    environment {
+        TRIVY_CACHE_DIR = "${WORKSPACE}/.trivycache"
+        REPORT_DIR      = "${WORKSPACE}/reports"
+        // Si BLOCK_ON_FINDINGS=true => exit-code=1 (falla el build). Si no, exit-code=0.
+        TRIVY_EXIT_CODE = "${params.BLOCK_ON_FINDINGS ? '1' : '0'}"
+        TRIVY_IGNORE    = "${params.IGNORE_UNFIXED ? '--ignore-unfixed' : ''}"
+    }
     stages {
+        stage('Trivy Scan') {
+            steps {
+                script {
+                    try {
+                        sh """
+                        mkdir -p "${REPORT_DIR}" "${TRIVY_CACHE_DIR}"
+                        docker run --rm \
+                            -v /var/run/docker.sock:/var/run/docker.sock \
+                            -v "${TRIVY_CACHE_DIR}":/root/.cache/ \
+                            -v "${WORKSPACE}":/workspace \
+                            aquasec/trivy:latest \
+                            --cache-dir /root/.cache/ \
+                            image ${TRIVY_IGNORE} \
+                            --scanners vuln,secret,config \
+                            --severity "${SEVERITIES}" \
+                            --format json  -o /workspace/reports/trivy-image.json \
+                            --format sarif -o /workspace/reports/trivy-image.sarif \
+                            --exit-code 1 \
+                            "${IMAGE_REF}"
+                        """
+                        echo "Trivy no encontró findings bloqueantes."
+                    } catch (err) {
+                        if (!params.BLOCK_ON_FINDINGS) {
+                            unstable("Trivy detectó vulnerabilidades: marcando UNSTABLE (no falla).")
+                        } else {
+                            error("Trivy detectó vulnerabilidades: FAIL por política.")
+                        }
+                    } finally {
+                        archiveArtifacts artifacts: 'reports/.json, reports/.sarif', fingerprint: true
+                    }
+                }
+            }
+        }
         stage('Safety') {
             agent {
                 docker { 
