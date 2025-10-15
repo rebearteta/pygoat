@@ -1,6 +1,6 @@
 pipeline {
     agent none
-     parameters {
+    parameters {
         booleanParam(name: 'BLOCK_ON_FINDINGS', defaultValue: true, description: 'Bloquear el pipeline si hay HIGH/CRITICAL')
         choice(name: 'SCAN_TARGET', choices: ['image','filesystem','both'], description: 'Qué escanear con Trivy')
         string(name: 'IMAGE_NAME', defaultValue: 'myjenkins-blueocean', description: 'Nombre de la imagen a escanear')
@@ -17,6 +17,12 @@ pipeline {
     }
     stages {
         stage('Trivy Scan') {
+            agent {
+                docker { 
+                    image 'python:3.11'
+                    args '-u root'
+                } 
+            }
             steps {
                 script {
                     try {
