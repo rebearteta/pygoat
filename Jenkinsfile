@@ -45,12 +45,15 @@ pipeline {
                         echo "Trivy no encontró findings bloqueantes."
                     } catch (err) {
                         if (!params.BLOCK_ON_FINDINGS) {
-                            unstable("Trivy detectó vulnerabilidades: marcando UNSTABLE (no falla).")
+                            echo "Trivy detectó vulnerabilidades: marcando UNSTABLE"
+                            unstable("Trivy detectó vulnerabilidades: marcando UNSTABLE")
                         } else {
+                            echo "Trivy detectó vulnerabilidades: FAIL por política."
                             error("Trivy detectó vulnerabilidades: FAIL por política.")
                         }
                     } finally {
-                        archiveArtifacts artifacts: 'reports/.json, reports/.sarif', fingerprint: true
+                        echo "saving findinds"
+                        archiveArtifacts artifacts: '/workspace/reports/trivy-image.json, /workspace/reports/trivy-image.sarif', fingerprint: true
                     }
                 }
             }
