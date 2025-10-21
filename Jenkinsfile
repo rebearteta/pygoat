@@ -23,11 +23,26 @@ pipeline {
         }
         stage('Trivy Scan') {
             agent {
-                docker { image 'aquasecurity/trivy:latest' }
+                docker { 
+                    image 'ubuntu:22.04'
+                    args '-u root'
+                } 
             }
             steps {
-                sh 'trivy image --format json --output report-trivy-image.json rebecaarteta/pygoat:pygoat:1.0.0'
-                archiveArtifacts artifacts: 'report-trivy-image.json', fingerprint: true, allowEmptyArchive: true
+                script {
+
+                    sh """
+                        apt-get update
+                        apt-get install wget apt-transport-https gnupg lsb-release -y
+                        wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+                        echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+                        apt-get install trivy -y
+                        
+                        trivy image --format json --output report-trivy-image.json rebecaarteta/pygoat:pygoat:1.0.0
+                    """
+
+                    archiveArtifacts artifacts: 'report-trivy-image.json', fingerprint: true, allowEmptyArchive: true
+                }
             }
         }
         stage('Deploy') {
