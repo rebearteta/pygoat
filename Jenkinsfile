@@ -30,7 +30,6 @@ pipeline {
             }
             steps {
                 script {
-
                     sh """
                         apt-get update
                         apt-get install wget apt-transport-https gnupg lsb-release -y
