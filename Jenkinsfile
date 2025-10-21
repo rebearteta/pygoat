@@ -37,8 +37,8 @@ pipeline {
                             image ${TRIVY_IGNORE} \
                             --scanners vuln,secret,config \
                             --severity "${SEVERITIES}" \
-                            --format json  -o /workspace/reports/trivy-image.json \
-                            --format sarif -o /workspace/reports/trivy-image.sarif \
+                            --format json  -o trivy-image.json \
+                            --format sarif -o trivy-image.sarif \
                             --exit-code 1 \
                             "${IMAGE_REF}"
                         """
@@ -52,8 +52,8 @@ pipeline {
                             error("Trivy detectó vulnerabilidades: FAIL por política.")
                         }
                     } finally {
-                        echo "saving findinds"
-                        archiveArtifacts artifacts: '/workspace/reports/trivy-image.json, /workspace/reports/trivy-image.sarif', fingerprint: true
+                        echo "saving findings"
+                        archiveArtifacts artifacts: 'trivy-image.json, trivy-image.sarif', fingerprint: true
                     }
                 }
             }
