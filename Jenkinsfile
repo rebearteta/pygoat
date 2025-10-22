@@ -24,7 +24,7 @@ pipeline {
             agent {
                 docker { 
                     image 'trufflesecurity/trufflehog:latest'
-                    args '-u root'
+                    args '-u root --entrypoint "sh"'
                 } 
             }
             steps {
