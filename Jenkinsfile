@@ -17,12 +17,10 @@ pipeline {
                 }
             }
             steps {
-                sh 'echo "docker build -t pygoat:1.0.0 ."'
-                sh 'echo "docker push rebecaarteta/pygoat:pygoat:1.0.0"'
-                sh ''
+                sh 'echo "building..."'
             }
         }
-        stage('Trivy Scan') {
+        stage('TruffleHog Scan') {
             agent {
                 docker { 
                     image 'ubuntu:22.04'
@@ -31,15 +29,10 @@ pipeline {
             }
             steps {
                 script {
-                    sh 'apt-get update'
-                    sh 'apt-get install wget apt-transport-https gnupg lsb-release -y'
-                    sh 'wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | tee /usr/share/keyrings/trivy.gpg > /dev/null'
-                    sh 'echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | tee -a /etc/apt/sources.list.d/trivy.list'
-                    sh 'apt-get update'
-                    sh 'apt-get install trivy -y'
-                    sh 'trivy image --format json --output report-trivy-image.json pygoat/pygoat'
+                    sh 'docker run --rm -it -v "$PWD:/pwd" trufflesecurity/trufflehog:latest github --repo https://github.com/trufflesecurity/test_keys'
+                    sh 'trufflehog git https://github.com/rebearteta/pygoat --results=verified --json > trufflehog-report.json'
                     
-                    archiveArtifacts artifacts: 'report-trivy-image.json', fingerprint: true, allowEmptyArchive: true
+                    archiveArtifacts artifacts: 'trufflehog-report.json', fingerprint: true, allowEmptyArchive: true
                 }
             }
         }
