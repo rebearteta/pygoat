@@ -23,14 +23,13 @@ pipeline {
         stage('TruffleHog Scan') {
             agent {
                 docker { 
-                    image 'ubuntu:22.04'
+                    image 'trufflesecurity/trufflehog:latest'
                     args '-u root'
                 } 
             }
             steps {
                 script {
-                    sh 'docker run --rm -it -v "$PWD:/pwd" trufflesecurity/trufflehog:latest github --repo https://github.com/trufflesecurity/test_keys'
-                    sh 'trufflehog git https://github.com/rebearteta/pygoat --results=verified --json > trufflehog-report.json'
+                    sh 'trufflehog filesystem "$PWD" --json > trufflehog-report.json'
                     
                     archiveArtifacts artifacts: 'trufflehog-report.json', fingerprint: true, allowEmptyArchive: true
                 }
