@@ -24,12 +24,12 @@ pipeline {
             agent {
                 docker { 
                     image 'trufflesecurity/trufflehog:latest'
-                    args '-u root --entrypoint "sh"'
+                    args '-u root --entrypoint ""'
                 } 
             }
             steps {
                 script {
-                    sh 'trufflehog filesystem "$PWD" --json > trufflehog-report.json'
+                    sh '/usr/bin/trufflehog filesystem "$PWD" --json > trufflehog-report.json'
                     
                     archiveArtifacts artifacts: 'trufflehog-report.json', fingerprint: true, allowEmptyArchive: true
                 }
