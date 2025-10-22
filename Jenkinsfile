@@ -19,6 +19,7 @@ pipeline {
             steps {
                 sh 'echo "docker build -t pygoat:1.0.0 ."'
                 sh 'echo "docker push rebecaarteta/pygoat:pygoat:1.0.0"'
+                sh ''
             }
         }
         stage('Trivy Scan') {
@@ -36,7 +37,7 @@ pipeline {
                     sh 'echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | tee -a /etc/apt/sources.list.d/trivy.list'
                     sh 'apt-get update'
                     sh 'apt-get install trivy -y'
-                    sh 'trivy image --format json --output report-trivy-image.json rebecaarteta/pygoat:pygoat:1.0.0'
+                    sh 'trivy image --format json --output report-trivy-image.json pygoat/pygoat'
                     
                     archiveArtifacts artifacts: 'report-trivy-image.json', fingerprint: true, allowEmptyArchive: true
                 }
