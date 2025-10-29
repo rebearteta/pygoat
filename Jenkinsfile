@@ -20,6 +20,17 @@ pipeline {
                 sh 'echo "building..."'
             }
         }
+        stage('Vault') {
+            steps {
+                script {
+                    def secrets = [
+                        [path: 'jenkins/creds/test', engineVersion: 1, secretValues: [
+                            [envVar: 'testing-secret', vaultKey: 'secret']]
+                        ],
+                    ]
+                }
+            }
+        }
         stage('TruffleHog Scan') {
             agent {
                 docker { 
