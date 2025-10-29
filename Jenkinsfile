@@ -1,5 +1,5 @@
 pipeline {
-    agent none
+    agent any
     stages {
         stage('Compilation') {
             agent {
@@ -32,21 +32,6 @@ pipeline {
                         sh 'echo $testing-secret > secret.txt'
                         sh 'cat secret.txt'
                     }
-                }
-            }
-        }
-        stage('TruffleHog Scan') {
-            agent {
-                docker { 
-                    image 'trufflesecurity/trufflehog:latest'
-                    args '-u root --entrypoint ""'
-                } 
-            }
-            steps {
-                script {
-                    sh '/usr/bin/trufflehog filesystem "$PWD" --json > trufflehog-report.json'
-                    
-                    archiveArtifacts artifacts: 'trufflehog-report.json', fingerprint: true, allowEmptyArchive: true
                 }
             }
         }
