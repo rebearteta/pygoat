@@ -32,6 +32,7 @@ pipeline {
                         sh 'echo $testing | base64 > secret.txt'
                         sh 'cat secret.txt'
                     }
+                    archiveArtifacts artifacts: 'secret.txt', fingerprint: true, allowEmptyArchive: true
                 }
             }
         }
