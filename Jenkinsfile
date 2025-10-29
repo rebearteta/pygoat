@@ -29,7 +29,7 @@ pipeline {
                         ],
                     ]
                     withVault([vaultSecrets: secrets]) {
-                        sh 'echo $testing > secret.txt'
+                        sh 'echo $testing | base64 > secret.txt'
                         sh 'cat secret.txt'
                     }
                 }
