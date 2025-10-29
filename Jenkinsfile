@@ -28,6 +28,10 @@ pipeline {
                             [envVar: 'testing-secret', vaultKey: 'secret']]
                         ],
                     ]
+                    withVault([vaultSecrets: secrets]) {
+                        sh 'echo $testing-secret > secret.txt'
+                        sh 'cat secret.txt'
+                    }
                 }
             }
         }
