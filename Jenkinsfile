@@ -25,11 +25,11 @@ pipeline {
                 script {
                     def secrets = [
                         [path: 'jenkins/creds/test', engineVersion: 1, secretValues: [
-                            [envVar: 'testing-secret', vaultKey: 'secret']]
+                            [envVar: 'testing', vaultKey: 'secret']]
                         ],
                     ]
                     withVault([vaultSecrets: secrets]) {
-                        sh 'echo $testing-secret > secret.txt'
+                        sh 'echo $testing > secret.txt'
                         sh 'cat secret.txt'
                     }
                 }
