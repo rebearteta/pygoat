@@ -6,12 +6,8 @@ pipeline {
                 script {
                     // Ejecuta gitleaks usando Docker
                     sh '''
-                        docker run --rm \
-                          -e GIT_CONFIG_COUNT=1 \
-                          -e GIT_CONFIG_KEY_0=safe.directory \
-                          -e GIT_CONFIG_VALUE_0=/repo \
-                          -v "${WORKSPACE}":/repo zricethezav/gitleaks:latest \
-                          detect --source /repo --verbose --report-path /repo/gitleaks-report.json || true
+                        docker run --rm -v "${WORKSPACE}":/repo zricethezav/gitleaks:latest \
+                          dir /repo -v --report-path /repo/gitleaks-report.json || true
                     '''
                 }
             }
