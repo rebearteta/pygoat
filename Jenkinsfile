@@ -6,12 +6,12 @@ pipeline {
             sh '''
               set -eux
               docker run --rm \
-                -v $WORKSPACE:/repo \
+                -v $WORKSPACE:$WORKSPACE \
+                -w $WORKSPACE \
                 zricethezav/gitleaks:latest detect \
-                  --source /repo \
-                  --no-git \
+                  --source $WORKSPACE \
                   --report-format json \
-                  --report-path /repo/gitleaks-report.json \
+                  --report-path $WORKSPACE/gitleaks-report.json \
                   --redact \
                   --exit-code 1
             '''
