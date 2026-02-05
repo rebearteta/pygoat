@@ -7,6 +7,8 @@ pipeline {
                     image 'zricethezav/gitleaks:latest' 
                     // args can usarse si necesitas montar volúmenes o ajustar opciones del contenedor 
                     // args '-v /host/path:/container/path' 
+                    args '--entrypoint ""'
+                    reuseNode true
                 } 
             } 
             steps { 
