@@ -1,48 +1,107 @@
 pipeline {
-    agent any
-    stages {
-        stage('Compilation') {
-            agent {
-                docker { image 'php:8.2-cli' }
-            }
-            steps {
-                sh 'echo "Compilando..."'
-            }
-        }
-        stage('Build') {
-            agent {
-                docker { 
-                    image 'docker:28.5.1-cli' 
-                    args '-u root'
-                }
-            }
-            steps {
-                sh 'echo "building..."'
-            }
-        }
-        stage('Vault') {
-            steps {
-                script {
-                    def secrets = [
-                        [path: 'jenkins/creds/test', engineVersion: 1, secretValues: [
-                            [envVar: 'testing', vaultKey: 'secret']]
-                        ],
-                    ]
-                    withVault([vaultSecrets: secrets]) {
-                        sh 'echo $testing | base64 > secret.txt'
-                        sh 'cat secret.txt'
-                    }
-                    archiveArtifacts artifacts: 'secret.txt', fingerprint: true, allowEmptyArchive: true
-                }
-            }
-        }
-        stage('Deploy') {
-            agent {
-                docker { image 'php:8.2-cli' }
-            }
-            steps {
-                sh 'echo "docker run my-php-app ."'
-            }
-        }
+  agent {
+    docker {
+      image 'python:3.12-slim'
     }
+  }
+  environment {
+    HOME = "${WORKSPACE}" // clave: evita que pip use /.local
+    PIP_CACHE_DIR = "${WORKSPACE}/.pip-cache"
+    PIP_DISABLE_PIP_VERSION_CHECK = "1"
+    PROJECT_NAME = 'pygoat'
+    PROJECT_VER = "build-${BUILD_NUMBER}"
+    SBOM_FILE = 'bom.xml'
+  }
+  stages {
+    /*stage('Security gate - Bandit (HIGH)') {
+      steps {
+        sh ''
+        '
+        python--version
+        python - m pip--version
+
+        # No hace falta "pip -U pip"
+        python - m pip install--user--no - cache - dir bandit
+
+        # Gate: solo severidad HIGH(y opcionalmente confianza HIGH)
+        python - m bandit - r.--severity - level high--confidence - level high - f json - o bandit.json ''
+        '
+      }
+      post {
+        always {
+          archiveArtifacts artifacts: 'bandit.json', fingerprint: true
+        }
+      }
+    }*/
+   /*stage('Generate SBOM') {
+      steps {
+        sh '''
+          set -eux
+          python3 -m venv .venv
+          . .venv/bin/activate
+    
+          python -m pip install -U pip cyclonedx-bom
+    
+          # Genera el SBOM leyendo requirements.txt (sin instalar nada)
+          if [ -f requirements.txt ]; then
+            cyclonedx-py requirements requirements.txt --of XML --sv 1.6 -o "${SBOM_FILE}"
+          else
+            # fallback por si no existe requirements.txt
+            cyclonedx-py environment --of XML --sv 1.6 -o "${SBOM_FILE}"
+          fi
+    
+          ls -lah "${SBOM_FILE}"
+        '''
+      }
+    }
+    stage('Upload to Dependency-Track') {
+      steps {
+        dependencyTrackPublisher(
+          projectName: "${env.PROJECT_NAME}",
+          projectVersion: "${env.PROJECT_VER}",
+          artifact: "${env.SBOM_FILE}",
+          synchronous: true
+        )
+      }
+    }
+  }
+  post {
+    always {
+        archiveArtifacts artifacts: "${SBOM_FILE}", fingerprint: true
+    }
+  }*/
+
+  stage('Secret Scan - Gitleaks') {
+      // Corre el stage dentro del contenedor oficial de gitleaks
+      // IMPORTANTE: se fuerza entrypoint vacío para que Jenkins pueda ejecutar "sh"
+      agent {
+        docker {
+          image 'gitleaks/gitleaks:8.18.0'
+          args  '--entrypoint=""'
+          reuseNode true
+        }
+      }
+
+      steps {
+        sh '''
+          set -e
+          gitleaks version
+
+          # Escanea el repo del workspace. Si hay leaks, devuelve exit code 1 y falla el stage.
+          gitleaks detect \
+            --source . \
+            --report-format json \
+            --report-path gitleaks-report.json \
+            --redact \
+            --exit-code 1
+        '''
+      }
+
+      post {
+        always {
+          archiveArtifacts artifacts: 'gitleaks-report.json', allowEmptyArchive: true
+        }
+      }
+    }
+  }
 }
