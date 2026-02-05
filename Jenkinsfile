@@ -16,7 +16,6 @@ pipeline {
                     set +e
                     gitleaks detect \
                         --source . \
-                        --no-git \
                         --report-format json \
                         --report-path gitleaks-report.json \
                         --redact \
