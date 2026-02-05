@@ -6,7 +6,7 @@ pipeline {
                 script {
                     // Ejecuta gitleaks usando Docker
                     sh '''
-                    docker run --rm -v ${WORKSPACE}:/repo zricethezav/gitleaks:latest \
+                    docker run --rm -v ${PWD}:/repo zricethezav/gitleaks:latest \
                     detect --source /repo --verbose --report-path /repo/gitleaks-report.json
                     '''
                 }
@@ -14,7 +14,7 @@ pipeline {
             post {
                 always {
                     // Archiva el reporte para revisarlo después
-                    archiveArtifacts artifacts: 'gitleaks-report.json', fingerprint: true
+                    archiveArtifacts artifacts: 'gitleaks-report.json', fingerprint: true, allowEmptyArchive: true
                 }
             }
         }
