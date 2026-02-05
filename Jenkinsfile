@@ -6,8 +6,13 @@ pipeline {
                 script {
                     // Ejecuta gitleaks usando Docker
                     sh '''
-                    docker run --rm -v ${WORKSPACE}:/repo zricethezav/gitleaks:latest \
-                    detect --source /repo --no-git --verbose --report-path /repo/gitleaks-report.json
+                        docker run --rm -v ${WORKSPACE}:/repo zricethezav/gitleaks:latest \
+                        detect --source /repo \
+                        --verbose \
+                        --report-path /repo/gitleaks-report.json \
+                        --log-level debug \
+                        --redact \
+                        --config /repo/.gitleaks.toml || true
                     '''
                 }
             }
