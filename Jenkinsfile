@@ -1,26 +1,32 @@
 pipeline {
     agent any
     stages {
-        stage('Secret Scan - Gitleaks') {
-          steps {
-            sh '''
-              set -eux
-              docker run --rm \
-                -v $WORKSPACE:$WORKSPACE \
-                -w $WORKSPACE \
-                zricethezav/gitleaks:latest detect \
-                  --source $WORKSPACE \
-                  --report-format json \
-                  --report-path $WORKSPACE/gitleaks-report.json \
-                  --redact \
-                  --exit-code 1
-            '''
-          }
-          post {
-            always {
-              archiveArtifacts artifacts: 'gitleaks-report.json', allowEmptyArchive: true
+        stage('Secret Scan - Gitleaks (docker agent)') { 
+            agent { 
+                docker { 
+                    image 'zricethezav/gitleaks:latest' 
+                    // args can usarse si necesitas montar volúmenes o ajustar opciones del contenedor 
+                    // args '-v /host/path:/container/path' 
+                } 
+            } 
+            steps { 
+                sh ''' 
+                    set -eux # Ejecutar gitleaks dentro del contenedor (la imagen ya trae el binario) 
+                    # Escanea el workspace actual; usa --no-git si no necesitas historial gitleaks 
+                    detect \ 
+                    --source . \ 
+                    --no-git \ 
+                    --report-format json \ 
+                    --report-path gitleaks-report.json \ 
+                    --redact \ 
+                    --exit-code 1 
+                ''' 
+            } 
+            post { 
+                always { 
+                    archiveArtifacts artifacts: 'gitleaks-report.json', allowEmptyArchive: true 
+                }
             }
-          }
         }
     }
 }
