@@ -5,17 +5,15 @@ pipeline {
             agent { 
                 docker { 
                     image 'zricethezav/gitleaks:latest' 
-                    // args can usarse si necesitas montar volúmenes o ajustar opciones del contenedor 
-                    // args '-v /host/path:/container/path' 
                     args '--entrypoint ""'
                     reuseNode true
                 } 
             } 
             steps { 
                 sh ''' 
+                    echo "Ejecutando análisis de secretos con Gitleaks..."
                     set -eux 
-                    # Ejecutar gitleaks dentro del contenedor (la imagen ya trae el binario) 
-                    # Escanea el workspace actual; usa --no-git si no necesitas historial 
+                    set +e
                     gitleaks detect \
                         --source . \
                         --no-git \
@@ -23,6 +21,15 @@ pipeline {
                         --report-path gitleaks-report.json \
                         --redact \
                         --exit-code 1 
+                    GITLEAKS_EXIT_CODE=$?
+                    set -e
+
+                    if [ $GITLEAKS_EXIT_CODE -eq 1 ]; then 
+                        echo "Se encontraron secretos en el código." 
+                        exit 1 
+                    else 
+                        echo "No se encontraron secretos." 
+                    fi
                 '''
             } 
             post { 
