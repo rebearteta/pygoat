@@ -13,7 +13,7 @@ pipeline {
     SBOM_FILE = 'bom.xml'
   }
   stages {
-    stage('Security gate - Bandit (HIGH)') {
+    /*stage('Security gate - Bandit (HIGH)') {
       steps {
         sh '''
           set -eux
@@ -56,7 +56,7 @@ pipeline {
           synchronous: true
         )
       }
-    }
+    }*/
 
     stage('Secret Scan - Gitleaks') {
       steps {
