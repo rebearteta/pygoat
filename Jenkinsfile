@@ -11,16 +11,17 @@ pipeline {
             } 
             steps { 
                 sh ''' 
-                    set -eux # Ejecutar gitleaks dentro del contenedor (la imagen ya trae el binario) 
-                    # Escanea el workspace actual; usa --no-git si no necesitas historial gitleaks 
-                    detect \ 
-                    --source . \ 
-                    --no-git \ 
-                    --report-format json \ 
-                    --report-path gitleaks-report.json \ 
-                    --redact \ 
-                    --exit-code 1 
-                ''' 
+                    set -eux 
+                    # Ejecutar gitleaks dentro del contenedor (la imagen ya trae el binario) 
+                    # Escanea el workspace actual; usa --no-git si no necesitas historial 
+                    gitleaks detect \
+                        --source . \
+                        --no-git \
+                        --report-format json \
+                        --report-path gitleaks-report.json \
+                        --redact \
+                        --exit-code 1 
+                '''
             } 
             post { 
                 always { 
